@@ -442,14 +442,14 @@ void process_instruction(){
     case ADD:
 
       if((fetch&0x0020)==0)
-        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + CURRENT_LATCHES.REGS[fetch&0x0007];
+        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + CURRENT_LATCHES.REGS[fetch&0x0007])&0xffff;
       else{
         if((fetch&0x0010)>=1)
           sext=(fetch&0x001f) | 0xFFFFFFE0;
         else
           sext=(fetch&0x001f);
 
-        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + sext;
+        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + sext)&0xffff;
       }
       setCC=true;
       break;
@@ -457,14 +457,14 @@ void process_instruction(){
     case AND:
     
       if((fetch&0x0020)==0)
-        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] & CURRENT_LATCHES.REGS[fetch&0x0007];
+        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] & CURRENT_LATCHES.REGS[fetch&0x0007])&0xFFFF;
       else{
         if((fetch&0x0010)>=1)
           sext=(fetch&0x001f) | 0xFFFFFFE0;
         else
           sext=(fetch&0x001f);
 
-        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] & sext;
+        NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] & sext)&0xFFFF;
       }
       setCC=true;
       break;
@@ -480,13 +480,13 @@ void process_instruction(){
        fetch|=0x0E00;
      
      if (((fetch&0x0800)&&CURRENT_LATCHES.N) || ((fetch&0x0400)&&CURRENT_LATCHES.Z) || ((fetch&0x0200)&&CURRENT_LATCHES.P)) 
-       NEXT_LATCHES.PC=CURRENT_LATCHES.PC+(sext<<1);
+       NEXT_LATCHES.PC=(CURRENT_LATCHES.PC+(sext<<1))&0xFFFF;
      
      break;
 
     case JMP:
    
-     NEXT_LATCHES.PC=CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6];
+     NEXT_LATCHES.PC=(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6])&0xFFFF;
      break;
 
     case JSR:
@@ -499,11 +499,11 @@ void process_instruction(){
        sext=(fetch&0x07FF);
 
      if((fetch&0x0800) == 0) 
-      NEXT_LATCHES.PC=CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6];
+      NEXT_LATCHES.PC=(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6])&0xffff;
      else
-      NEXT_LATCHES.PC=CURRENT_LATCHES.PC+(sext<<1);
+      NEXT_LATCHES.PC=(CURRENT_LATCHES.PC+(sext<<1))&0xffff;
 
-     NEXT_LATCHES.REGS[7]=temp;
+     NEXT_LATCHES.REGS[7]=temp&0xffff;
      break;
 
     case LDB:
@@ -517,9 +517,9 @@ void process_instruction(){
      loadSext = MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + sext)>>1][(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + sext)%2];
 
      if((loadSext&0x0080) >= 1)
-       loadSext|=0xFFFFFF00;
+       loadSext|=0xFF00;
     
-     NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = loadSext;
+     NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = loadSext&0xFFFF;
 
      setCC=true;
      break;
@@ -532,12 +532,12 @@ void process_instruction(){
      else
        sext=(fetch&0x003F);
 
-      loadSext = MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + (sext<<1)) >> 1][0] + (MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + (sext<<1))>>1 ][1] << 8);
+      loadSext = MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + (sext<<1)) >> 1][0] + ((MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6] + (sext<<1))>>1 ][1]) << 8);
       
-      if((loadSext&0x0080) >= 1)
-       loadSext|=0xFFFFFF00;
+      // if((loadSext&0x8000) >= 1)
+      //  loadSext|=0xFF00;
       
-      NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = loadSext;
+      NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = loadSext&0xffff;
      setCC=true;
      break;
 
@@ -548,20 +548,19 @@ void process_instruction(){
      else
        sext=(fetch&0x01FF);
 
-     //printf("%d", ((fetch&0x0E00)>>9));
-     NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = CURRENT_LATCHES.PC+(sext<<1);
+     NEXT_LATCHES.REGS[(fetch&0x0E00)>>9] = (CURRENT_LATCHES.PC+(sext<<1))&0xffff;
      break;
 
     case SHF:
    
       if((fetch&0x0010)==0){ //LSHF
 
-        NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6] << (fetch&0xf);
+        NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6] << (fetch&0xf))&0xffff;
         if((fetch&0x0020)==0){ // RSHFL
           unsigned int logic = (unsigned int) (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6]);
-          NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = logic >> (fetch&0xf);
+          NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (logic >> (fetch&0xf))&0xFFFF;
         }else{ //RSHFA
-          NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6]) >> (fetch&0xf);
+          NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6] >> (fetch&0xf))&0xffff;
         }
       }
 
@@ -575,7 +574,7 @@ void process_instruction(){
      else
        sext=(fetch&0x003F);
 
-     MEMORY[(CURRENT_LATCHES.REGS[((fetch&0x01c0)>>6)]+sext)>>1][(CURRENT_LATCHES.REGS[((fetch&0x01c0)>>6)]+sext)%2] = CURRENT_LATCHES.REGS[(fetch&0x0e00>>9)]&0x00ff;
+     MEMORY[(CURRENT_LATCHES.REGS[((fetch&0x01c0)>>6)]+sext)>>1][(CURRENT_LATCHES.REGS[((fetch&0x01c0)>>6)]+sext)%2] = CURRENT_LATCHES.REGS[(fetch&0x0e00)>>9]&0x00ff;
      break;
     
     case STW:
@@ -601,9 +600,9 @@ void process_instruction(){
           sext=(fetch&0x001f);
 
      if((fetch&0x0020)==0)
-       NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = ( CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] ^ CURRENT_LATCHES.REGS[(fetch&0x0007)] );
+       NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = ( CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] ^ CURRENT_LATCHES.REGS[(fetch&0x0007)] )&0xffff;
      else
-       NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] ^ sext);
+       NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] ^ sext)&0xffff;
        
      setCC=true;
      break;
