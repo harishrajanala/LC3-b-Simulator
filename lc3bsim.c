@@ -479,8 +479,13 @@ void process_instruction(){
      if((fetch&0x0E00) == 0)
        fetch|=0x0E00;
      
-     if (((fetch&0x0800)&&CURRENT_LATCHES.N) || ((fetch&0x0400)&&CURRENT_LATCHES.Z) || ((fetch&0x0200)&&CURRENT_LATCHES.P)) 
-       NEXT_LATCHES.PC=(CURRENT_LATCHES.PC+(sext<<1))&0xFFFF;
+     if (((fetch&0x0800)&&CURRENT_LATCHES.N) || ((fetch&0x0400)&&CURRENT_LATCHES.Z) || ((fetch&0x0200)&&CURRENT_LATCHES.P)){ 
+       NEXT_LATCHES.PC=(CURRENT_LATCHES.PC+(sext<<1));
+       if(NEXT_LATCHES.PC>0xFFFF){
+         NEXT_LATCHES.PC=0;
+       }
+        
+     }
      
      break;
 
@@ -498,10 +503,17 @@ void process_instruction(){
      else
        sext=(fetch&0x07FF);
 
-     if((fetch&0x0800) == 0) 
-      NEXT_LATCHES.PC=(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6])&0xffff;
-     else
-      NEXT_LATCHES.PC=(CURRENT_LATCHES.PC+(sext<<1))&0xffff;
+     if((fetch&0x0800) == 0) {
+      NEXT_LATCHES.PC=(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6]);
+       
+     }else{
+      NEXT_LATCHES.PC=(CURRENT_LATCHES.PC+(sext<<1));
+      if(NEXT_LATCHES.PC>0xFFFF){
+         NEXT_LATCHES.PC=0;
+       }else{
+        NEXT_LATCHES.PC=(CURRENT_LATCHES.REGS[(fetch&0x01C0)>>6])&0xffff;
+       }
+     }
 
      NEXT_LATCHES.REGS[7]=temp&0xffff;
      break;
@@ -555,12 +567,18 @@ void process_instruction(){
    
       if((fetch&0x0010)==0){ //LSHF
 
-        NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6] << (fetch&0xf))&0xffff;
+        NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] << (fetch&0xf))&0xffff;
         if((fetch&0x0020)==0){ // RSHFL
-          unsigned int logic = (unsigned int) (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6]);
+          unsigned int logic = (unsigned int) (CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6]);
           NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (logic >> (fetch&0xf))&0xFFFF;
         }else{ //RSHFA
-          NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>6] >> (fetch&0xf))&0xffff;
+
+          if((CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6]&0x80) == 0)
+            loadSext = CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6];
+          else
+            loadSext = CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] | 0xffff0000;
+
+          NEXT_LATCHES.REGS[(fetch&0x0e00)>>9] = (loadSext >> (fetch&0xf))&0xffff;
         }
       }
 
