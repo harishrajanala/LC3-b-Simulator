@@ -436,6 +436,9 @@ void process_instruction(){
    int loadSext;
    int temp;
    CURRENT_LATCHES.PC+=2;
+   if(CURRENT_LATCHES.PC>0xFFFF)
+    NEXT_LATCHES.PC=0;
+
    NEXT_LATCHES.PC=CURRENT_LATCHES.PC;
    switch (opCode)
    {
@@ -602,8 +605,8 @@ void process_instruction(){
      else
        sext=(fetch&0x003F);
      
-     MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] + (sext<<1)) >> 1][0] = (CURRENT_LATCHES.REGS[(fetch&0x01c0)>>9] & 0xff);
-     MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] + (sext<<1)) >> 1][1] = ((CURRENT_LATCHES.REGS[(fetch&0x01c0)>>9] >> 8) & 0xff);
+     MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] + (sext<<1)) >> 1][0] = (CURRENT_LATCHES.REGS[(fetch&0x0e00)>>9] & 0xff);
+     MEMORY[(CURRENT_LATCHES.REGS[(fetch&0x01c0)>>6] + (sext<<1)) >> 1][1] = ((CURRENT_LATCHES.REGS[(fetch&0x0e00)>>9] >> 8) & 0xff);
      break;
 
     case TRAP:
