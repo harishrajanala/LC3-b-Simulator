@@ -604,7 +604,9 @@ void process_instruction(){
      break;
 
     case TRAP:
-     NEXT_LATCHES.PC = 0;
+    //  NEXT_LATCHES.PC = 0;
+     NEXT_LATCHES.REGS[7]=CURRENT_LATCHES.PC;
+     NEXT_LATCHES.PC = (MEMORY[((fetch&0xff) << 1)][0] + (MEMORY[((fetch&0xff) << 1)][1] << 8))&0xffff;
      break;
 
     case XOR:
